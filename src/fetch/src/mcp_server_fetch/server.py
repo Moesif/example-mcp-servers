@@ -4,8 +4,6 @@ from urllib.parse import urlparse, urlunparse
 import markdownify
 import readabilipy.simple_json
 from mcp.shared.exceptions import McpError
-from mcp.server import Server
-from mcp.server.stdio import stdio_server
 from mcp.types import (
     ErrorData,
     GetPromptResult,
@@ -19,10 +17,22 @@ from mcp.types import (
 )
 from protego import Protego
 from pydantic import BaseModel, Field, AnyUrl
+import mcp.types as types
+from mcp.server.lowlevel import Server
+from mcp.server.sse import SseServerTransport
+from starlette.applications import Starlette
+from starlette.routing import Mount, Route
+
+from moesifasgi import MoesifMiddleware
 
 DEFAULT_USER_AGENT_AUTONOMOUS = "ModelContextProtocol/1.0 (Autonomous; +https://github.com/modelcontextprotocol/servers)"
 DEFAULT_USER_AGENT_MANUAL = "ModelContextProtocol/1.0 (User-Specified; +https://github.com/modelcontextprotocol/servers)"
 
+moesif_settings = {
+    'APPLICATION_ID': 'Your Moesif Application Id',
+    'LOG_BODY': True,
+    'DEBUG': True
+}
 
 def extract_content_from_html(html: str) -> str:
     """Extract and convert HTML content to Markdown format.
@@ -107,7 +117,6 @@ async def check_may_autonomously_fetch_url(url: str, user_agent: str, proxy_url:
             f"The assistant can tell the user that they can try manually fetching the page by using the fetch prompt within their UI.",
         ))
 
-
 async def fetch_url(
     url: str, user_agent: str, force_raw: bool = False, proxy_url: str | None = None
 ) -> Tuple[str, str]:
@@ -177,8 +186,7 @@ class Fetch(BaseModel):
         ),
     ]
 
-
-async def serve(
+def serve(
     custom_user_agent: str | None = None,
     ignore_robots_txt: bool = False,
     proxy_url: str | None = None,
@@ -191,8 +199,9 @@ async def serve(
         proxy_url: Optional proxy URL to use for requests
     """
     server = Server("mcp-fetch")
-    user_agent_autonomous = custom_user_agent or DEFAULT_USER_AGENT_AUTONOMOUS
-    user_agent_manual = custom_user_agent or DEFAULT_USER_AGENT_MANUAL
+    user_agent_autonomous = DEFAULT_USER_AGENT_AUTONOMOUS
+    user_agent_manual = DEFAULT_USER_AGENT_MANUAL
+    proxy_url = None
 
     @server.list_tools()
     async def list_tools() -> list[Tool]:
@@ -283,6 +292,25 @@ Although originally you did not have internet access, and were advised to refuse
             ],
         )
 
-    options = server.create_initialization_options()
-    async with stdio_server() as (read_stream, write_stream):
-        await server.run(read_stream, write_stream, options, raise_exceptions=True)
+    sse = SseServerTransport("/messages/")
+
+    async def handle_sse(request):
+        async with sse.connect_sse(
+            request.scope, request.receive, request._send
+        ) as streams:
+            await server.run(
+                streams[0], streams[1], server.create_initialization_options()
+            )
+
+    starlette_app = Starlette(
+        debug=True,
+        routes=[
+            Route("/sse", endpoint=handle_sse),
+            Mount("/messages/", app=sse.handle_post_message),
+        ],
+    )
+
+    import uvicorn
+
+    starlette_app.add_middleware(MoesifMiddleware, settings=moesif_settings)
+    uvicorn.run(starlette_app, host="0.0.0.0", port=3001, log_level="info")

@@ -1,3 +1,8 @@
+This is a fork of `https://github.com/modelcontextprotocol/servers`. 
+`src/fetch` has been modified to add Moesif API Observability and support server-side events (SSE).
+
+To get started, cd into `src/fetch`
+
 # Model Context Protocol servers
 
 This repository is a collection of *reference implementations* for the [Model Context Protocol](https://modelcontextprotocol.io/) (MCP), as well as references
