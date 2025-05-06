@@ -3,8 +3,17 @@ import { InMemoryEventStore } from '@modelcontextprotocol/sdk/examples/shared/in
 import express, { Request, Response } from "express";
 import { createServer } from "./everything.js";
 import { randomUUID } from 'node:crypto';
+import moesif from 'moesif-nodejs';
 
 const app = express();
+
+// adding moesif middleware for analytics
+const moesifOptions = {
+  applicationId: process.env.MOESIF_APPLICATION_ID || 'YOUR APPLICATION ID HERE',
+  // other options,
+}
+const moesifMiddleware = moesif(moesifOptions);
+app.use(moesifMiddleware);
 
 const { server, cleanup } = createServer();
 

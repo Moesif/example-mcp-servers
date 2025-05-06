@@ -188,3 +188,27 @@ cd src/everything
 npm install
 npm run start:streamableHttp
 ```
+
+### Add Moesif API Analytics
+
+Moesif is only supported for http transport, not Standard IO (stdio) transport. MCP deprecated the SSE transport.
+
+So for this example, we only installed in the `streamableHttps.ts`.
+
+
+```shell
+npm install --save moesif-nodejs
+```
+
+In `streamableHttps.ts`, we added code below:
+
+```javascript
+const app = express();
+const moesifOptions = {
+  applicationId: process.env.MOESIF_APPLICATION_ID || 'YOUR APPLICATION ID HERE',
+  // other options,
+}
+const moesifMiddleware = moesif(moesifOptions);
+app.use(moesifMiddleware);
+```
+
