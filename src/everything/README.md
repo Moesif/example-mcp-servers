@@ -1,6 +1,9 @@
-# Everything MCP Server
+
+# Everything MCP Server (A Fork with Moesif Analytics)
 
 This MCP server attempts to exercise all the features of the MCP protocol. It is not intended to be a useful server, but rather a test server for builders of MCP clients. It implements prompts, tools, resources, sampling, and more to showcase MCP capabilities.
+
+This is forked from https://github.com/modelcontextprotocol/servers to demonstrate how to add Moesif API Analytics and Monetization.
 
 ## Components
 
@@ -189,7 +192,7 @@ npm install
 npm run start:streamableHttp
 ```
 
-### Add Moesif API Analytics
+## Add Moesif API Analytics
 
 Moesif is only supported for http transport, not Standard IO (stdio) transport. MCP deprecated the SSE transport.
 
