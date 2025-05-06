@@ -200,7 +200,7 @@ So for this example, we only installed in the `streamableHttps.ts`.
 npm install --save moesif-nodejs
 ```
 
-In `streamableHttps.ts`, we added code below:
+In `streamableHttps.ts`, we added code below. Please replace the MOESIF_APPLICATION_ID with your the one in your Moesif Account.
 
 ```javascript
 const app = express();
@@ -212,3 +212,8 @@ const moesifMiddleware = moesif(moesifOptions);
 app.use(moesifMiddleware);
 ```
 
+And follow instructions above to run streamableHttps server by:
+
+```shell
+npm run start:streamableHttp
+```
